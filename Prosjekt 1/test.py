@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Sep 17 15:25:01 2018
+
+@author: Rafiki
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Mon Sep 17 10:26:33 2018
 
 @author: Rafiki
@@ -11,6 +18,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error,r2_score
+from numpy.linalg import svd
+from numpy import diag
 
  # Bootstrap
 def bootstrap(self, nBoots = 1000):
@@ -38,11 +47,19 @@ z = FrankeFunction(x, y)
 
 
 # Finner beta verdier
-xb = np.c_[np.ones((len(z),1)),x,x**2,x*y,y**2,x**3,x**2*y,x*y**2,y**3,x**4,x**3*y,x**2*y**2,x*y**3,y**4,x**5,x**4*y,x**3*y**2,x**2*y**3,x*y**4,y**5]
+xb = np.c_[np.ones((len(z),1)),x,y
+           ,x**2,x*y,y**2
+           ,x**3,x**2*y,x*y**2,y**3
+           ,x**4,x**3*y,x**2*y**2,x*y**3,y**4
+           ,x**5,x**4*y,x**3*y**2,x**2*y**3,x*y**4,y**5]
+
+
 beta = np.linalg.inv(xb.T.dot(xb)).dot(xb.T).dot(z)
-zpred = beta[0]+(beta[1]*x)+(beta[2]*x**2)+(beta[3]*x*y)+(beta[4]*y**2)+(beta[5]*x**3)+(beta[6]*x**2*y)+(beta[7]*x*y**2)+(beta[8]*y**3)
-zpred = zpred+(beta[9]*x**4)+(beta[10]*x**3*y)+(beta[11]*x**2*y**2)+(beta[12]*x*y**3)+(beta[13]*y**4)
-zpred = zpred+(beta[14]*x**5)+(beta[15]*x**4*y)+(beta[16]*x**3*y**2)+(beta[17]*x**2*y**3)+(beta[18]*x*y**4)+(beta[19]*y**5)
+zpred = beta[0]+beta[1]*x+beta[2]*y
+zpred = zpred+beta[3]*x**2+beta[4]*x*y+beta[5]*y**2
+zpred = zpred+beta[6]*x**3+beta[7]*x**2*y+beta[8]*x*y**2+beta[9]*x*y**3
+zpred = zpred+(beta[10]*x**4)+(beta[11]*x**3*y)+(beta[12]*x**2*y**2)+(beta[13]*x*y**3)+(beta[14]*y**4)
+zpred = zpred+(beta[15]*x**5)+(beta[16]*x**4*y)+(beta[17]*x**3*y**2)+(beta[18]*x**2*y**3)+(beta[19]*x*y**4)+(beta[20]*y**5)
 
 # The beta values as polynomial
 print("######## Beta verdier i stigende rekkefølge ###########")
@@ -74,8 +91,6 @@ print("######## Histogram av bootstrap gjennomsnitt ###########")
 print("Bootstrap gjennomsnitt = %.2f og varians = %.2f" %(resamp[0],resamp[1]))
 print("Sann verdi gjennomsnitt = %.2f og varians = %.2f" %(np.mean(z),np.var(z)))
 
-xnew = np.linspace(0,1,100)
-ypred = beta[0]+(beta[1]*xnew)+(beta[2]*xnew**2)+(beta[3]*xnew**3)+(beta[4]*xnew**4)+(beta[5]*xnew**5)
 plt.plot(x,z,'ro')
-plt.plot(xnew,ypred)
+plt.plot(x,zpred,'bo')
 plt.show()
