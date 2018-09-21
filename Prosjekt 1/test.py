@@ -20,6 +20,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error,r2_score
 from numpy.linalg import svd
 from numpy import diag
+from scipy import linalg
 
  # Bootstrap
 def bootstrap(self, nBoots = 1000):
@@ -44,7 +45,8 @@ def FrankeFunction(x,y):
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 z = FrankeFunction(x, y)
-
+x1 = x.flatten()
+y1 = y.flatten()
 
 # Finner beta verdier
 xb = np.c_[np.ones((len(z),1)),x,y
@@ -54,7 +56,7 @@ xb = np.c_[np.ones((len(z),1)),x,y
            ,x**5,x**4*y,x**3*y**2,x**2*y**3,x*y**4,y**5]
 
 
-beta = np.linalg.inv(xb.T.dot(xb)).dot(xb.T).dot(z)
+beta = linalg.inv(xb.T.dot(xb)).dot(xb.T).dot(z)
 zpred = beta[0]+beta[1]*x+beta[2]*y
 zpred = zpred+beta[3]*x**2+beta[4]*x*y+beta[5]*y**2
 zpred = zpred+beta[6]*x**3+beta[7]*x**2*y+beta[8]*x*y**2+beta[9]*x*y**3
@@ -92,5 +94,6 @@ print("Bootstrap gjennomsnitt = %.2f og varians = %.2f" %(resamp[0],resamp[1]))
 print("Sann verdi gjennomsnitt = %.2f og varians = %.2f" %(np.mean(z),np.var(z)))
 
 plt.plot(x,z,'ro')
+
 plt.plot(x,zpred,'bo')
 plt.show()
