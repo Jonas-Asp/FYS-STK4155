@@ -23,6 +23,12 @@ x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 x, y = np.meshgrid(x,y)
 
+ # Bootstrap
+def bootstrap(self, nBoots = 1):
+    bootVec = np.zeros(nBoots)
+    for k in range(0,nBoots):
+        print(np.random.choice(self.data, len(self.data)))
+    
 
 def FrankeFunction(x,y):
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
@@ -36,7 +42,7 @@ z1 = z.flatten()
 x1 = x.flatten()
 y1 = y.flatten()
 
-
+lam = 0.01
 
 # Finner beta verdier
 xy = np.c_[np.ones((z.size,1)),x1,y1
@@ -45,7 +51,7 @@ xy = np.c_[np.ones((z.size,1)),x1,y1
            ,x1**4,x1**3*y1,x1**2*y1**2,x1*y1**3,y1**4
            ,x1**5,x1**4*y1,x1**3*y1**2,x1**2*y1**3,x1*y1**4,y1**5]
 
-beta = linalg.inv(xy.T.dot(xy)).dot(xy.T).dot(z1)
+beta = linalg.inv(xy.T.dot(xy) - lam*np.identity(len(z)+1)).dot(xy.T).dot(z1)
 
 zpred = xy.dot(beta).flatten()
 
@@ -72,9 +78,6 @@ print("")
 # Confidense interval ?
 print("######## Confidence interval som 2*sqrt(diagonal(var)) ??? ###########")
 print(2*np.sqrt(np.diagonal(var)))
-
-
-
 
 
 
