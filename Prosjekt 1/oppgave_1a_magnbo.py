@@ -5,6 +5,7 @@ import numpy as np
 from scipy import linalg
 from random import seed, random
 from sklearn.utils import resample
+from sklearn.metrics import r2_score
 
 X1 = np.arange(0, 1, 0.05)
 Y1 = np.arange(0, 1, 0.05)
@@ -61,19 +62,18 @@ def ridge(xb, lam_0):
     mse_boot = np.zeros(30)
 
     for i in range(30):
-        xbnew_boot_sample, z_boot_sample = resample(xbnew ,Z2, n_samples=100)
-        beta_boot = (np.linalg.inv(xbnew_boot_sample.T @ xbnew_boot_sample + lam_0 *
-                     np.identity(n)).dot(xbnew_boot_sample.T).dot(z_boot_sample))
-        zpredict_boot_sample = xbnew_boot_sample @ beta_boot
+        xbnew_boot_train, z_boot_train = resample(xbnew, Z2, n_samples=100)
+        oob_xb = np.array([x for x in xbnew if x.tolist() not in xbnew_boot_train.tolist()])
+        oob_z = np.array([x for x in Z2 if x not in z_boot_train])
+        xbnew_boot_test, z_boot_test = resample(oob_xb ,oob_z , n_samples=100)
+        beta_boot_train = (np.linalg.inv(xbnew_boot_train.T @ xbnew_boot_train + lam_0 *
+                                   np.identity(n)).dot(xbnew_boot_train.T).dot(z_boot_train))
+        zpredict_boot_test = xbnew_boot_test @ beta_boot_train
         for j in range(100):
-            mse_boot[i] += (1/100) * (z_boot_sample[j] - zpredict_boot_sample[j])**2
+            mse_boot[i] += (1/100) * (z_boot_test[j] - zpredict_boot_test[j])**2
         u = 0
         b = 0
-        z_boot_mean = np.mean(z_boot_sample)
-        for l in range(100):
-            u += (Z2[l] - zpredict_boot_sample[l])**2
-            b += (Z2[l] - z_boot_mean)**2
-        rr_boot[i] = 1 - u/b
+        rr_boot[i] = r2_score(z_boot_test, zpredict_boot_test)
     mse_boot_mean = np.mean(mse_boot)
     mse_boot_2std = 2 * np.std(mse_boot)
     rr_boot_mean = np.mean(rr_boot)
@@ -83,7 +83,7 @@ def ridge(xb, lam_0):
 
 BETA, BETA_VARIANCE, MSE, RR, MSE_BOOT_MEAN, MSE_BOOT_2STD, RR_BOOT_MEAN, RR_BOOT_2STD = ridge(XB1,
                                                                                                0)
-print(MSE_BOOT_2STD)
+print(RR_BOOT_2STD)
 # FIG = plt.figure()
 # AX = FIG.gca(projection='3d')
 # SURF = AX.plot_surface(X1, Y1, Z1, cmap=cm.viridis, linewidth=0)
