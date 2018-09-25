@@ -61,21 +61,29 @@ def ridge(xb, lam_0):
     mse_boot = np.zeros(30)
 
     for i in range(30):
-        zpredict_boot_sample, z_boot_sample = resample( zpredict, Z2, n_samples=100)
+        xbnew_boot_sample, z_boot_sample = resample(xbnew ,Z2, n_samples=100)
+        beta_boot = (np.linalg.inv(xbnew_boot_sample.T @ xbnew_boot_sample + lam_0 *
+                     np.identity(n)).dot(xbnew_boot_sample.T).dot(z_boot_sample))
+        zpredict_boot_sample = xbnew_boot_sample @ beta_boot
         for j in range(100):
             mse_boot[i] += (1/100) * (z_boot_sample[j] - zpredict_boot_sample[j])**2
         u = 0
         b = 0
         z_boot_mean = np.mean(z_boot_sample)
         for l in range(100):
-            u += (Z2[l] - zpredict[l])**2
+            u += (Z2[l] - zpredict_boot_sample[l])**2
             b += (Z2[l] - z_boot_mean)**2
         rr_boot[i] = 1 - u/b
-    return beta, np.diag(covariance_matrix), mse, rr, rr_boot, mse_boot
+    mse_boot_mean = np.mean(mse_boot)
+    mse_boot_2std = 2 * np.std(mse_boot)
+    rr_boot_mean = np.mean(rr_boot)
+    rr_boot_2std = 2* np.std(rr_boot)
+    return (beta, np.diag(covariance_matrix), mse, rr, mse_boot_mean, mse_boot_2std, rr_boot_mean,
+            rr_boot_2std)
 
-BETA, COVARIANCE_MATRIX, MSE, RR, RR_BOOT, MSE_BOOT = ridge(XB1, 0)
-print(RR_BOOT)
-print(MSE_BOOT)
+BETA, BETA_VARIANCE, MSE, RR, MSE_BOOT_MEAN, MSE_BOOT_2STD, RR_BOOT_MEAN, RR_BOOT_2STD = ridge(XB1,
+                                                                                               0)
+print(MSE_BOOT_2STD)
 # FIG = plt.figure()
 # AX = FIG.gca(projection='3d')
 # SURF = AX.plot_surface(X1, Y1, Z1, cmap=cm.viridis, linewidth=0)
