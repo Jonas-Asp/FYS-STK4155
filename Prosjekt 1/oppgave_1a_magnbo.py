@@ -2,7 +2,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import linalg
 from random import seed, random
 from sklearn.utils import resample
 from sklearn.metrics import r2_score
@@ -46,7 +45,7 @@ def ridge(xb, lam_0):
     zpredict2 = np.reshape(zpredict, (20, 20))
     variance = 0
     for i in range(400):
-        variance =+ (1/(400-3-1)) * (Z2[i] - zpredict[i])**2
+        variance += (1/(400-n-1)) * (Z2[i] - zpredict[i])**2
     covariance_matrix = np.linalg.inv(xb.T @ xb) * variance
     mse = 0.
     for i in range(400):
@@ -78,12 +77,13 @@ def ridge(xb, lam_0):
     mse_boot_2std = 2 * np.std(mse_boot)
     rr_boot_mean = np.mean(rr_boot)
     rr_boot_2std = 2* np.std(rr_boot)
-    return (beta, np.diag(covariance_matrix), mse, rr, mse_boot_mean, mse_boot_2std, rr_boot_mean,
+    beta_confidence = 2 * np.linalg.norm(np.diag(covariance_matrix))
+    return (beta, beta_confidence, mse, rr, mse_boot_mean, mse_boot_2std, rr_boot_mean,
             rr_boot_2std)
 
-BETA, BETA_VARIANCE, MSE, RR, MSE_BOOT_MEAN, MSE_BOOT_2STD, RR_BOOT_MEAN, RR_BOOT_2STD = ridge(XB1,
-                                                                                               0)
-print(RR_BOOT_2STD)
+BETA, BETA_CONFIDENCE, MSE, RR, MSE_BOOT_MEAN, MSE_BOOT_2STD, RR_BOOT_MEAN, RR_BOOT_2STD = ridge(XB1,
+                                                                                                 0)
+print(BETA_CONFIDENCE)
 # FIG = plt.figure()
 # AX = FIG.gca(projection='3d')
 # SURF = AX.plot_surface(X1, Y1, Z1, cmap=cm.viridis, linewidth=0)
