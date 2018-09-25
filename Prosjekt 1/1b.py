@@ -5,7 +5,7 @@ Created on Tue Sep 25 10:33:32 2018
 
 @author: Jonas Asperud
 """
-
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
@@ -19,17 +19,20 @@ def bootstrap(sampleData,nBoots,designMatrix):
     b = np.zeros((nBoots,designMatrix.shape[1]))
     mse = np.zeros(nBoots)
     r2 = np.zeros(nBoots)
-    
+    # Assigns the last third as test data and the first 3 thirds as training data
+    threeThirds = int(3*len(sampleData)/4)
+    trainingData = sampleData[0:threeThirds]
+    testData = sampleData[threeThirds+1:]
     # Loops through the set number of boots
     for k in range(0,nBoots):
         # Chooses a random set of data points from data, with same number of rows as data
-        bootVec = np.random.choice(sampleData, len(sampleData))
+        bootVec = np.random.choice(trainingData, len(sampleData))
         # Calculates beta values
         b[k,:] = linalg.inv(designMatrix.T.dot(designMatrix)).dot(designMatrix.T).dot(bootVec)
         # Create a fit model for the data
         bootpred = designMatrix.dot(b[k,:]).flatten()
         # Does error calculation
-        mse[k],r2[k] = error(sampleData,bootpred)
+        mse[k],r2[k] = error(testData,bootpred[threeThirds+1:])
     return mse,r2,b
 
 # Creating the FrankeFunction
@@ -76,7 +79,7 @@ x, y = np.meshgrid(x,y)
 z = FrankeFunction(x,y)
 
 # Setting the right format for the matrices and add noise
-Z = z.flatten()+10*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
+Z = z.flatten()+0*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
 X = x.flatten()
 Y = y.flatten()
 
@@ -86,18 +89,26 @@ degree = PolynomialFeatures(degree=5)
 dMatrix = degree.fit_transform(XY)
 
 #Setting lambda value. For ridge lam > 0; for OLS lam = 0
-lam = np.linspace(0,1,1000)
+lam = [0,1,2,3,4,5,6,7,8,9,10]
 beta = regression(Z,dMatrix,lam,21)
 
 
 # Bootstrapping (The real matrix, Number of boots, design-matrix)
 bootMSE, bootR2, bootBeta = bootstrap(Z,1000,dMatrix)
 
+plt.hist(bootMSE, bins='auto')
+plt.plot([np.mean(bootMSE),np.mean(bootMSE)],[0,120],'r--',label='Mean bootstrap MSE')
+plt.legend()
+plt.show()
+
+
+
 
 
 
 MSE = np.zeros(len(lam))
 R2 = np.zeros(len(lam))
+VAR = np.zeros(len(lam))
 # Prediction and plotting
 for i in range(len(lam)):
     zpred = dMatrix.dot(beta[i,:].flatten()).flatten()
@@ -108,23 +119,21 @@ for i in range(len(lam)):
     varB = linalg.inv(dMatrix.T.dot(dMatrix))*(sigma)
     confInter = 2*np.sqrt(np.diagonal(varB))
     
-    zpred = zpred.reshape(20,20)
-    #plotting(x,y,zpred)
 
-print(np.argmin(MSE))
-print(MSE[259],lam[259])
-plt.plot(lam,R2)
-plt.xlabel('Lambda value')
-plt.ylabel('R2 score')
-plt.title('Ridge Lambda value as a function of R2 score')
-plt.show()
 
-plt.plot(lam,MSE)
+# Mean square error plot
+plt.plot(lam,MSE,'ro-',label='Ridge')
+plt.plot(lam,np.ones(len(lam))*MSE[0],'g--',label='OLS')
+plt.plot(lam[np.argmin(MSE)],MSE[np.argmin(MSE)],'bo',label=('Minimum MSE = %.4f at $\lambda$=%.0f' %(MSE[np.argmin(MSE)],lam[np.argmin(MSE)])))
+plt.plot(lam,np.ones(len(lam))*np.mean(bootMSE),'y--',label='mean bootstrap MSE')
 plt.xlabel('Lambda value')
-plt.ylabel('Mean square error')
+plt.ylabel('Mean square error (MSE)')
 plt.title('Ridge Lambda value as a function of mean square error')
+plt.legend()
 plt.show()
 
+
+#plotting(x,y,Z.reshape(20,20))
 
 
 
