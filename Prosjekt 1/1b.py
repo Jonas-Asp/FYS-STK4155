@@ -6,14 +6,10 @@ Created on Tue Sep 25 10:33:32 2018
 @author: Jonas Asperud
 """
 
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
-from random import random, seed
 from scipy import linalg
-from sklearn.metrics import mean_squared_error,r2_score
 from sklearn.preprocessing import PolynomialFeatures
 
  # Bootstrap
@@ -33,8 +29,7 @@ def bootstrap(sampleData,nBoots,designMatrix):
         # Create a fit model for the data
         bootpred = designMatrix.dot(b[k,:]).flatten()
         # Does error calculation
-        mse[k] = mean_squared_error(sampleData,bootpred)
-        r2[k] = r2_score(sampleData,bootpred)
+        mse[k],r2[k] = error(sampleData,bootpred)
     return mse,r2,b
 
 # Creating the FrankeFunction
@@ -59,14 +54,29 @@ def plotting(x,y,z):
     fig.colorbar(surf, shrink=0.5, aspect=5)
     plt.show()    
 
+# Calculates beta values and predict the function using this fit/model
+def regression(z,designMatrix,lam,shape):
+    beta = np.zeros((len(lam),shape))
+    for k in range(len(lam)):
+        beta[k] = linalg.inv(designMatrix.T.dot(designMatrix)-lam[k]*np.identity(shape)).dot(designMatrix.T).dot(z)
+    return beta
+
+
+# Error evaluation
+def error(z,zpred):
+    mse = (1/len(z))*sum((z-zpred)**2)
+    mean = (1/len(z))*sum(z)
+    r2 = 1 - (len(z)*mse/sum((z-mean)**2))
+    return mse,r2
+    
 # Make data.
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 x, y = np.meshgrid(x,y)
 z = FrankeFunction(x,y)
 
-# Setting the right format for the matrices
-Z = z.flatten()
+# Setting the right format for the matrices and add noise
+Z = z.flatten()+10*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
 X = x.flatten()
 Y = y.flatten()
 
@@ -75,21 +85,45 @@ XY = np.c_[X,Y]
 degree = PolynomialFeatures(degree=5)
 dMatrix = degree.fit_transform(XY)
 
-# Calculates beta values and predict the function using this fit/model
-beta = linalg.inv(dMatrix.T.dot(dMatrix)).dot(dMatrix.T).dot(Z)
+#Setting lambda value. For ridge lam > 0; for OLS lam = 0
+lam = np.linspace(0,1,1000)
+beta = regression(Z,dMatrix,lam,21)
+
 
 # Bootstrapping (The real matrix, Number of boots, design-matrix)
-bootMSE, bootR2, bootBeta = bootstrap(Z,1,dMatrix)
+bootMSE, bootR2, bootBeta = bootstrap(Z,1000,dMatrix)
 
 
+
+
+MSE = np.zeros(len(lam))
+R2 = np.zeros(len(lam))
 # Prediction and plotting
-zpred = dMatrix.dot(bootBeta.flatten()).flatten()
-zpred = zpred.reshape(20,20)
-plotting(x,y,z)
-plotting(x,y,zpred)
+for i in range(len(lam)):
+    zpred = dMatrix.dot(beta[i,:].flatten()).flatten()
+    
+    # Error and variance etc.
+    MSE[i],R2[i] = error(Z,zpred)
+    sigma = (5+1)*MSE[i]
+    varB = linalg.inv(dMatrix.T.dot(dMatrix))*(sigma)
+    confInter = 2*np.sqrt(np.diagonal(varB))
+    
+    zpred = zpred.reshape(20,20)
+    #plotting(x,y,zpred)
 
+print(np.argmin(MSE))
+print(MSE[259],lam[259])
+plt.plot(lam,R2)
+plt.xlabel('Lambda value')
+plt.ylabel('R2 score')
+plt.title('Ridge Lambda value as a function of R2 score')
+plt.show()
 
-
+plt.plot(lam,MSE)
+plt.xlabel('Lambda value')
+plt.ylabel('Mean square error')
+plt.title('Ridge Lambda value as a function of mean square error')
+plt.show()
 
 
 
