@@ -19,6 +19,7 @@ def bootstrap(sampleData,nBoots,designMatrix,lam,shape):
     b = np.zeros((nBoots,designMatrix.shape[1]))
     mse = np.zeros(nBoots)
     r2 = np.zeros(nBoots)
+    mean = np.zeros(nBoots)
     # Assigns the last third as test data and the first 3 thirds as training data
     threeThirds = int(3*len(sampleData)/4)
     trainingData = sampleData[0:threeThirds]
@@ -33,7 +34,15 @@ def bootstrap(sampleData,nBoots,designMatrix,lam,shape):
         bootpred = designMatrix.dot(b[k,:]).flatten()
         # Does error calculation
         mse[k],r2[k] = error(testData,bootpred[threeThirds+1:])
-    return np.mean(mse),np.mean(r2),b
+        
+        mean[k] = np.average(bootVec)
+    
+    
+    std = np.std(mean)
+    var = np.var(mean)
+    avg = np.average(mean)
+
+    return np.mean(mse),np.mean(r2),b,std,var,avg
 
 # Creating the FrankeFunction
 def FrankeFunction(x,y):
@@ -71,7 +80,11 @@ def error(z,zpred):
     mean = (1/len(z))*sum(z)
     r2 = 1 - (len(z)*mse/sum((z-mean)**2))
     return mse,r2
-    
+
+
+
+
+################### Setting data ##########################
 # Make data.
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
@@ -103,6 +116,9 @@ beta = regression(Z,dMatrix,lam,21)
 
 bootMSE = np.zeros(len(lam))
 bootR2 = np.zeros(len(lam))
+bootVar = np.zeros(len(lam))
+bootStd = np.zeros(len(lam))
+bootAvg = np.zeros(len(lam))
 MSE = np.zeros(len(lam))
 R2 = np.zeros(len(lam))
 VAR = np.zeros(len(lam))
@@ -113,7 +129,7 @@ for i in range(len(lam)):
     # Error and variance etc.
     MSE[i],R2[i] = error(Z,zpred)
     # Bootstrapping
-    bootMSE[i], bootR2[i], bootBeta = bootstrap(Z,1000,dMatrix,lam[i],dMatrix.shape[1])
+    bootMSE[i], bootR2[i], bootBeta, bootStd[i], bootVar[i], bootAvg[i] = bootstrap(Z,1000,dMatrix,lam[i],dMatrix.shape[1])
     
     
     sigma = (5+1)*MSE[i]
@@ -121,6 +137,16 @@ for i in range(len(lam)):
     confInter = 2*np.sqrt(np.diagonal(varB))
     
 
+################### Bias And variance calculation and plotting plotting #############
+plt.plot(lam,bootVar,'ro-',label='Variance')
+plt.plot(lam,bootStd,'bo-',label='Bias')
+plt.plot(lam,(bootVar+bootStd),'go-',label='Bias-Variance decomposition')
+plt.xlabel('Lambda value')
+plt.ylabel('Variance/Standard deviation/Average')
+plt.legend()
+plt.show()
+
+########################## Plotting ##################################
 # Bootstrap MSE plot
 plt.plot(lam,bootMSE,'go-',label=('Minimum MSE = %.4f at $\lambda$=%.0f' %(MSE[np.argmin(MSE)],lam[np.argmin(MSE)])))
 plt.title('Ridge regression - Mean bootstrap MSE for different lambda values')
