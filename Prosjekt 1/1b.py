@@ -5,7 +5,7 @@ Created on Tue Sep 25 10:33:32 2018
 
 @author: Jonas Asperud
 """
-
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
@@ -13,24 +13,36 @@ from scipy import linalg
 from sklearn.preprocessing import PolynomialFeatures
 
  # Bootstrap
-def bootstrap(sampleData,nBoots,designMatrix):
+def bootstrap(sampleData,nBoots,designMatrix,lam,shape):
     # Initiate matrices
     bootVec = np.zeros(len(sampleData))
     b = np.zeros((nBoots,designMatrix.shape[1]))
     mse = np.zeros(nBoots)
     r2 = np.zeros(nBoots)
-    
+    mean = np.zeros(nBoots)
+    # Assigns the last third as test data and the first 3 thirds as training data
+    threeThirds = int(3*len(sampleData)/4)
+    trainingData = sampleData[0:threeThirds]
+    testData = sampleData[threeThirds+1:]
     # Loops through the set number of boots
     for k in range(0,nBoots):
         # Chooses a random set of data points from data, with same number of rows as data
-        bootVec = np.random.choice(sampleData, len(sampleData))
+        bootVec = np.random.choice(trainingData, len(sampleData))
         # Calculates beta values
-        b[k,:] = linalg.inv(designMatrix.T.dot(designMatrix)).dot(designMatrix.T).dot(bootVec)
+        b[k,:] = linalg.inv(designMatrix.T.dot(designMatrix) - lam*np.identity(shape)).dot(designMatrix.T).dot(bootVec)
         # Create a fit model for the data
         bootpred = designMatrix.dot(b[k,:]).flatten()
         # Does error calculation
-        mse[k],r2[k] = error(sampleData,bootpred)
-    return mse,r2,b
+        mse[k],r2[k] = error(testData,bootpred[threeThirds+1:])
+        
+        mean[k] = np.average(bootVec)
+    
+    
+    std = np.std(mean)
+    var = np.var(mean)
+    avg = np.average(mean)
+
+    return np.mean(mse),np.mean(r2),b,std,var,avg
 
 # Creating the FrankeFunction
 def FrankeFunction(x,y):
@@ -68,7 +80,11 @@ def error(z,zpred):
     mean = (1/len(z))*sum(z)
     r2 = 1 - (len(z)*mse/sum((z-mean)**2))
     return mse,r2
-    
+
+
+
+
+################### Setting data ##########################
 # Make data.
 
 x = np.arange(0, 1, 0.05)
@@ -77,7 +93,11 @@ x, y = np.meshgrid(x,y)
 z = FrankeFunction(x,y)+1*np.random.rand(20).flatten()
 
 # Setting the right format for the matrices and add noise
+<<<<<<< HEAD
 Z = z.flatten()
+=======
+Z = z.flatten()+0*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
+>>>>>>> fb11abadb8902016e35293eeea43764638457e1d
 X = x.flatten()
 Y = y.flatten()
 
@@ -87,47 +107,88 @@ degree = PolynomialFeatures(degree=5)
 dMatrix = degree.fit_transform(XY)
 
 #Setting lambda value. For ridge lam > 0; for OLS lam = 0
-lam = np.linspace(0,1,1000)
+lam = [0,1,2,3,4,5,6,7,8,9,10]
 beta = regression(Z,dMatrix,lam,21)
 
 
-# Bootstrapping (The real matrix, Number of boots, design-matrix)
-bootMSE, bootR2, bootBeta = bootstrap(Z,1000,dMatrix)
 
 
 
 
+
+
+
+
+bootMSE = np.zeros(len(lam))
+bootR2 = np.zeros(len(lam))
+bootVar = np.zeros(len(lam))
+bootStd = np.zeros(len(lam))
+bootAvg = np.zeros(len(lam))
 MSE = np.zeros(len(lam))
 R2 = np.zeros(len(lam))
+VAR = np.zeros(len(lam))
 # Prediction and plotting
 for i in range(len(lam)):
     zpred = dMatrix.dot(beta[i,:].flatten()).flatten()
     
     # Error and variance etc.
     MSE[i],R2[i] = error(Z,zpred)
+    # Bootstrapping
+    bootMSE[i], bootR2[i], bootBeta, bootStd[i], bootVar[i], bootAvg[i] = bootstrap(Z,1000,dMatrix,lam[i],dMatrix.shape[1])
+    
+    
     sigma = (5+1)*MSE[i]
     varB = linalg.inv(dMatrix.T.dot(dMatrix))*(sigma)
     confInter = 2*np.sqrt(np.diagonal(varB))
     
-    zpred = zpred.reshape(20,20)
-    #plotting(x,y,zpred)
 
-print(np.argmin(MSE))
-print(MSE[259],lam[259])
-plt.plot(lam,R2)
+################### Bias And variance calculation and plotting plotting #############
+plt.plot(lam,bootVar,'ro-',label='Variance')
+plt.plot(lam,bootStd,'bo-',label='Bias')
+plt.plot(lam,(bootVar+bootStd),'go-',label='Bias-Variance decomposition')
+plt.xlabel('Lambda value')
+plt.ylabel('Variance/Standard deviation/Average')
+plt.legend()
+plt.show()
+
+########################## Plotting ##################################
+# Bootstrap MSE plot
+plt.plot(lam,bootMSE,'go-',label=('Minimum MSE = %.4f at $\lambda$=%.0f' %(MSE[np.argmin(MSE)],lam[np.argmin(MSE)])))
+plt.title('Ridge regression - Mean bootstrap MSE for different lambda values')
+plt.xlabel('Lambda value')
+plt.ylabel('Mean bootstrapping MSE')
+plt.legend()
+plt.show()
+
+# Mean square error plot
+plt.plot(lam,MSE,'ro-',label='Ridge')
+plt.plot(lam,np.ones(len(lam))*MSE[0],'g--',label='OLS')
+plt.plot(lam[np.argmin(MSE)],MSE[np.argmin(MSE)],'bo',label=('Minimum MSE = %.4f at $\lambda$=%.0f' %(MSE[np.argmin(MSE)],lam[np.argmin(MSE)])))
+plt.xlabel('Lambda value')
+plt.ylabel('Mean square error (MSE)')
+plt.title('Ridge regression - Lambda value as a function of mean square error')
+plt.legend()
+plt.show()
+
+# Bootstrap MSE plot
+bestR2 = (np.abs(bootR2-1)).argmin()
+plt.plot(lam,bootR2,'go-',label=('Best R2 score = %.4f at $\lambda$=%.0f' %(bootR2[bestR2],lam[bestR2])))
+plt.title('Ridge regression - Mean bootstrap R2 score for different lambda values')
+plt.xlabel('Lambda value')
+plt.ylabel('Mean bootstrapping R2 score')
+plt.legend()
+plt.show()
+
+# R2 score plot
+bestR2 = (np.abs(R2-1)).argmin()
+plt.plot(lam,R2,'ro-',label='Ridge')
+plt.plot(lam,np.ones(len(lam))*R2[0],'g--',label='OLS')
+plt.plot(lam[bestR2],R2[bestR2],'bo',label=('Best R2 score = %.4f at $\lambda$=%.0f' %(R2[bestR2],lam[bestR2])))
 plt.xlabel('Lambda value')
 plt.ylabel('R2 score')
-plt.title('Ridge Lambda value as a function of R2 score')
+plt.title('Ridge regression - Lambda values as a function of R2 score')
+plt.legend()
 plt.show()
-
-plt.plot(lam,MSE)
-plt.xlabel('Lambda value')
-plt.ylabel('Mean square error')
-plt.title('Ridge Lambda value as a function of mean square error')
-plt.show()
-
-
-
 
 
 
