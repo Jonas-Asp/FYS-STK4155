@@ -70,13 +70,14 @@ def error(z,zpred):
     return mse,r2
     
 # Make data.
+
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 x, y = np.meshgrid(x,y)
-z = FrankeFunction(x,y)
+z = FrankeFunction(x,y)+1*np.random.rand(20).flatten()
 
 # Setting the right format for the matrices and add noise
-Z = z.flatten()+10*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
+Z = z.flatten()
 X = x.flatten()
 Y = y.flatten()
 
