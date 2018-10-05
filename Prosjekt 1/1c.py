@@ -5,6 +5,8 @@ import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
 from sklearn.utils import resample
 from scipy import linalg
 from sklearn.metrics import mean_squared_error
@@ -33,8 +35,8 @@ def FrankeFunction(x,y):
     return term1 + term2 + term3 + term4
 
 # Do the regression and return beta values
-def regression(z,designMatrix,lam):
-    return linalg.inv(designMatrix.T.dot(designMatrix)+lam*np.identity(designMatrix.shape[1])).dot(designMatrix.T).dot(z)
+def regression(z,designMatrix):
+    return linalg.inv(designMatrix.T.dot(designMatrix)).dot(designMatrix.T).dot(z)
 
 # Create design matrix
 def designMatrix(X,Y,degree):
@@ -51,8 +53,8 @@ def variance(zpred):
 def Bias(z,zpred):
     return np.mean((z-np.mean(zpred, axis=1))**2)
 
-def bootstrap(x,y,z,degree,nboots,lam):
-    # Split into training and test data 3/4 to 1/4 ratio
+def bootstrap(x,y,z,degree,nboots):
+    # Split into training and test date 3/4 to 1/4 ratio
     xtrain,xtest,ytrain,ytest,ztrain,ztest = train_test_split(x,y,z, test_size=0.25)
     
     mse = np.zeros(nboots)
@@ -62,7 +64,7 @@ def bootstrap(x,y,z,degree,nboots,lam):
         
         dmtrain = designMatrix(xboot,yboot,degree)
         
-        beta = regression(zboot,dmtrain,lam)
+        beta = regression(zboot,dmtrain)
         
         dmtest = designMatrix(xtest,ytest,degree)
         zpred[:,i] = dmtest.dot(beta)
@@ -84,39 +86,24 @@ X = x.flatten()
 Y = y.flatten()
 Z = z.flatten() + 0*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
 
-degree = 5
-lam = np.linspace(0,1,10)
-mse = np.zeros(len(lam))
-bootmse = np.zeros(len(lam))
-bootstd = np.zeros(len(lam))
-bootbias = np.zeros(len(lam))
-bootvar = np.zeros(len(lam))
-for i in range(len(lam)):
-    dm = designMatrix(X,Y,degree)
-    beta = regression(Z,dm,lam[i])
+degree = 1
+alpha = np.linspace(1e-10,1,10)
+mse = np.zeros(len(alpha))
+bootmse = np.zeros(degree)
+bootstd = np.zeros(degree)
+bootbias = np.zeros(degree)
+bootvar = np.zeros(degree)
+
+for i in range(len(alpha)):
+    xtrain,xtest,ytrain,ytest,ztrain,ztest = train_test_split(x,y,z, test_size=0.25)
     
-    zpred = dm.dot(beta)
-    #plotting(x,y,zpred.reshape(20,20))
-    mse[i] = MSE(Z,zpred)
-    bootmse[i],bootstd[i],bootbias[i],bootvar[i] = bootstrap(X,Y,Z,degree,100,lam[i])
+    lasso=linear_model.Lasso(alpha=alpha[i])
+    lasso.fit(ytrain,ztrain)
+    predl=lasso.predict(ztest)
+    
+    
+    mse[i] = MSE(ztest.flatten(),predl.flatten())
+    
+plt.plot(alpha,mse,'o-')
 
-#### Plot bootrap mot real !? Uten noise
-plt.plot(lam,mse,'o-',label='Ekte bruttovarians')
-plt.errorbar(lam, bootmse,2*bootstd, ls='--', marker='o',capsize=5,label='Bootrap bruttovarians')
-plt.legend()
-plt.xlabel('Lambda verdi')
-plt.ylabel('Bruttovarians')
-plt.title('Bruttovarians forskjell mellom ekte funksjon og bootstrap med 95% konfidensintervall ')
-plt.xticks(lam)
-plt.show()
 
-### Varians bias decomposition
-plt.plot(lam,bootvar,'o-',label='Varians')
-plt.plot(lam,bootbias,'o-',label='Forventningsrett')
-plt.plot(lam,bootmse,'--',label='Bootstrap bruttovarians')
-plt.xticks(lam)
-plt.legend()
-plt.xlabel('Lambda verdi')
-plt.ylabel('Arb. Unit')
-plt.title('Forventningsrett-Varians dekomposisjon')
-plt.show()

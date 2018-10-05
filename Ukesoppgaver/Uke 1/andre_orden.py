@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error,r2_score
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
 
  # Bootstrap
 def bootstrap(self, nBoots = 1000):
@@ -47,3 +49,10 @@ print(np.mean(y),np.var(y))
 plt.plot(x,y,'ro')
 plt.plot(xnew,ypred)
 plt.show()
+
+
+lasso = linear_model.Lasso(alpha=20)
+lasso.fit(xb,y)
+zpred = lasso.predict(xb)
+
+print(lasso.coef_)
