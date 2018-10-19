@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Sep 25 10:33:32 2018
-
 @author: Jonas Asperud
 """
 from mpl_toolkits.mplot3d import Axes3D
@@ -29,7 +28,8 @@ def bootstrap(sampleData,nBoots,designMatrix,lam,shape):
         # Chooses a random set of data points from data, with same number of rows as data
         bootVec = np.random.choice(trainingData, len(sampleData))
         # Calculates beta values
-        b[k,:] = linalg.inv(designMatrix.T.dot(designMatrix) - lam*np.identity(shape)).dot(designMatrix.T).dot(bootVec)
+
+        b[k,:] = linalg.inv(designMatrix.T.dot(designMatrix) + lam*np.identity(shape)).dot(designMatrix.T).dot(bootVec)
         # Create a fit model for the data
         bootpred = designMatrix.dot(b[k,:]).flatten()
         # Does error calculation
@@ -70,7 +70,7 @@ def plotting(x,y,z):
 def regression(z,designMatrix,lam,shape):
     beta = np.zeros((len(lam),shape))
     for k in range(len(lam)):
-        beta[k] = linalg.inv(designMatrix.T.dot(designMatrix)-lam[k]*np.identity(shape)).dot(designMatrix.T).dot(z)
+        beta[k] = linalg.inv(designMatrix.T.dot(designMatrix)+lam[k]*np.identity(shape)).dot(designMatrix.T).dot(z)
     return beta
 
 
@@ -86,18 +86,13 @@ def error(z,zpred):
 
 ################### Setting data ##########################
 # Make data.
-
 x = np.arange(0, 1, 0.05)
 y = np.arange(0, 1, 0.05)
 x, y = np.meshgrid(x,y)
-z = FrankeFunction(x,y)+1*np.random.rand(20).flatten()
+z = FrankeFunction(x,y)
 
 # Setting the right format for the matrices and add noise
-<<<<<<< HEAD
-Z = z.flatten()
-=======
 Z = z.flatten()+0*np.random.rand(z.shape[0]*z.shape[1],1).flatten()
->>>>>>> fb11abadb8902016e35293eeea43764638457e1d
 X = x.flatten()
 Y = y.flatten()
 
@@ -189,6 +184,3 @@ plt.ylabel('R2 score')
 plt.title('Ridge regression - Lambda values as a function of R2 score')
 plt.legend()
 plt.show()
-
-
-
