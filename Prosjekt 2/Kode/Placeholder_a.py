@@ -9,27 +9,27 @@ from sklearn.utils import resample
 
 def bootstrap(x,y,degree,nboots):
     # Split into training and test date 3/4 to 1/4 ratio
-    xtrain,xtest,ytrain,ytest,ztrain,ztest = train_test_split(x,y, test_size=0.25)
+    xtrain,xtest,ytrain,ytest= train_test_split(x,y, test_size=0.25)
     
     mse = np.zeros(nboots)
     r2 = np.zeros(nboots)
-    zpred = np.zeros((ztest.shape[0],nboots))
+    ypred = np.zeros((ytest.shape[0],nboots))
     for i in range(nboots-1):
-        xboot,yboot,zboot = resample(xtrain,ytrain,ztrain)
+        xboot,yboot = resample(xtrain,ytrain)
         
-        dmtrain = designMatrix(xboot,yboot,degree)
+        dmtrain = designMatrix(xboot,degree)
         
-        beta = regression(zboot,dmtrain)
+        beta = regression(yboot,dmtrain,0,True)
         
-        dmtest = designMatrix(xtest,ytest,degree)
-        zpred[:,i] = dmtest.dot(beta)
+        dmtest = designMatrix(xtest,degree)
+        ypred[:,i] = dmtest.dot(beta)
         
-        mse[i] = MSE(ztest,zpred[:,i])
-        r2[i] = R2(ztest,zpred[:,i],mse[i])
-    var = variance(zpred)
-    bias = Bias(ztest,zpred)
-    std = np.std(mse)
-    return np.mean(mse),std,bias, np.mean(var),np.mean(r2)
+        mse[i] = MSE(ytest,ypred[:,i])
+        r2[i] = R2(ytest,ypred[:,i],mse[i])
+    
+    bias = Bias(ytest,ypred)
+    
+    return np.mean(mse),np.mean(r2)
 
 # Do the regression and return beta values
 def regression(y,designMatrix,lam,OLS):
@@ -64,6 +64,9 @@ def R2(z,zpred,mse):
 # Calculate the mean
 def Mean(zpred):
     return sum(zpred)/len(zpred)
+
+def Bias(z,zpred):
+    return np.mean((z - np.mean(zpred, axis=0, keepdims=True))**2)
 
 
 # This function calculates the energies of the states in the nn Ising Hamiltonian
@@ -106,6 +109,8 @@ dMatrix = designMatrix(X_train,1)
 lam = np.logspace(-4, 5, 10)
 mse = np.zeros((3,len(lam)))
 r2 = np.zeros((3,len(lam)))
+boot_mse = np.zeros((len(lam)))
+boot_r2 = np.zeros((len(lam)))
 
 for i in range(len(lam)):
     #cmap_args=dict(vmin=-1., vmax=1., cmap='seismic')
@@ -117,7 +122,7 @@ for i in range(len(lam)):
     lasso,lassopred = getLasso(X_train,Y_train,lam[i])
 
     ### Bootstrapping
-    
+    boot_mse[i],boot_r2[i] = bootstrap(Data[0],Data[1],1,10)
 
 
     ################ PLotting
