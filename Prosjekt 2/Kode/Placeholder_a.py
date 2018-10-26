@@ -15,6 +15,11 @@ def ising_energies(states,L):
 
 
 L=2
+
+
+
+
+
 # create 10000 random Ising states
 states=np.random.choice([-1, 1], size=(2,L))
 print(states,"States 1")
