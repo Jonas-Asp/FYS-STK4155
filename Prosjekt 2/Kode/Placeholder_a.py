@@ -21,7 +21,7 @@ L=2
 
 
 # create 10000 random Ising states
-states=np.random.choice([-1, 1], size=(2,L))
+states=np.random.choice([-1, 1], size=(4,L))
 print(states,"States 1")
 # calculate Ising energies
 energies=ising_energies(states,L)
