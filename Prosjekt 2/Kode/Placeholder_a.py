@@ -43,4 +43,4 @@ Y_train=Data[1][:n_samples] #+ np.random.normal(0,4.0,size=X_train.shape[0])
 X_test=Data[0][n_samples:3*n_samples//2]
 Y_test=Data[1][n_samples:3*n_samples//2] #+ np.random.normal(0,4.0,size=X_test.shape[0])
 
-print(Y_train)
+print(X_train[:,:])

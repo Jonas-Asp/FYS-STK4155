@@ -1,121 +1,111 @@
-from __future__ import print_function
-import mxnet as mx
-from mxnet import nd, autograd, gluon
-mx.random.seed(1)
-
-data_ctx = mx.cpu()
-model_ctx = mx.cpu()
-
-
-num_inputs = 2
-num_outputs = 1
-num_examples = 10000
-
-def real_fn(X):
-    return 2 * X[:, 0] - 3.4 * X[:, 1] + 4.2
-
-X = nd.random_normal(shape=(num_examples, num_inputs), ctx=data_ctx)
-noise = .1 * nd.random_normal(shape=(num_examples,), ctx=data_ctx)
-y = real_fn(X) + noise
-
+import numpy as np
 import matplotlib.pyplot as plt
-plt.scatter(X[:, 1].asnumpy(),y.asnumpy())
-plt.show()
 
+# This function calculates the energies of the states in the nn Ising Hamiltonian
+def ising_energies(states,L):
+    J=np.zeros((L,L))
+    for i in range(L):
+        J[i,(i+1)%L]-=1.0
+    print(J,"Find J")
+    # compute energies
+    E = np.einsum('...i,ij,...j->...',states,J,states)
+    return E
 
+#----------------------------------------------------------------------------------------------------#
+L=2
 
-batch_size = 4
-train_data = gluon.data.DataLoader(gluon.data.ArrayDataset(X, y),batch_size=batch_size, shuffle=True)
+# create 10000 random Ising states
+states=np.random.choice([-1, 1], size=(6,L))
+print(states)
+# calculate Ising energies
+energies=ising_energies(states,L)
 
+# reshape Ising states into RL samples: S_iS_j --> X_p
+states=np.einsum('...i,...j->...ij', states, states)
+shape=states.shape
+states=states.reshape((shape[0],shape[1]*shape[2]))
+# build final data set
+Data=[states,energies]
 
+print(Data[0],"States")
+print(Data[1],"Energy")
 
+n_samples=400
+# define train and test data sets
+X_train=Data[0][:n_samples]
+Y_train=Data[1][:n_samples] #+ np.random.normal(0,4.0,size=X_train.shape[0])
+X_test=Data[0][n_samples:3*n_samples//2]
+Y_test=Data[1][n_samples:3*n_samples//2] #+ np.random.normal(0,4.0,size=X_test.shape[0])
+#----------------------------------------------------------------------------------------------------#
+x = X_train # 4 x 4
+y = Y_train.reshape(x.shape[0],1) # 4 x 1
 
+class NeuralNetwork:
+    def __init__(
+        self,
+        X_data,
+        Y_data,
+        n_hidden_neurons=50,
+        n_categories=1,
+        n_outputs = 6,
+        eta=0.1,
+        lmbd=0.0,
 
+    ):
+        self.X_data = X_data
+        self.Y_data = Y_data
 
-w = nd.random_normal(shape=(num_inputs, num_outputs), ctx=model_ctx)
-b = nd.random_normal(shape=num_outputs, ctx=model_ctx)
-params = [w, b]
-
-
-for param in params:
-    param.attach_grad()
-    
-    
-
-def net(X):
-    return mx.nd.dot(X, w) + b
-
-def square_loss(yhat, y):
-    return nd.mean((yhat - y) ** 2)
-
-
-# Gradient decent
-def SGD(params, lr):
-    for param in params:
-        param[:] = param - lr * param.grad
+        self.n_inputs = X_data.shape[0]
+        self.n_features = X_data.shape[1]
+        self.n_hidden_neurons = n_hidden_neurons
+        self.n_categories = n_categories
+        self.n_outputs = n_outputs
         
+        self.eta = eta
+        
+        self.create_biases_and_weights()
 
-epochs = 10
-learning_rate = .0001
-num_batches = num_examples/batch_size
+    def create_biases_and_weights(self):
+        self.hidden_weights = np.random.randn(self.n_features, self.n_hidden_neurons)
+        self.hidden_bias = np.zeros(self.n_hidden_neurons) + 0.01
 
-for e in range(epochs):
-    cumulative_loss = 0
-    # inner loop
-    for i, (data, label) in enumerate(train_data):
-        data = data.as_in_context(model_ctx)
-        label = label.as_in_context(model_ctx).reshape((-1, 1))
-        with autograd.record():
-            output = net(data)
-            loss = square_loss(output, label)
-        loss.backward()
-        SGD(params, learning_rate)
-        cumulative_loss += loss.asscalar()
-    print(cumulative_loss / num_batches)
+        self.output_weights = np.random.randn(self.n_outputs, self.n_categories)
+        self.output_bias = np.zeros(self.n_categories) + 0.01
+
+    def feed_forward(self):
+        # feed-forward for training
+        self.z_h = np.matmul(self.X_data, self.hidden_weights) + self.hidden_bias
+        self.a_h = self.sigmoid(self.z_h)
+
+        self.z_o = np.matmul(self.a_h, self.output_weights) + self.output_bias
+        self.a_o = self.sigmoid(self.z_o)
+
+
+    def backpropagation(self):
+        delta_o = (self.z_o - self.Y_data) * self.sigmoidPrime(self.z_o)
+        grad_o_w = np.dot(self.a_o.T,delta_o)
+        grad_o_b = delta_o
+        
+        
+        delta_h = np.dot(delta_o,self.output_weights.T) * self.sigmoidPrime(self.z_h)
+        grad_h_w = np.dot(self.X_data.T,delta_h)
+        grad_h_o = np.sum(delta_h,axis=0)
+
+        """ Update weights and biases """
+        print(np.shape(self.output_weights))
+        print(np.shape(grad_o_w))
+        self.output_weights -= self.eta * grad_o_w
+        self.output_bias -= self.eta * grad_o_b
+        
+    def sigmoid(self, z):
+        # Apply sigmoid activation function
+        return 1./(1.+np.exp(-z))
     
-    
-    
-############################################
-#    Re-initialize parameters because they
-#    were already trained in the first loop
-############################################
-w[:] = nd.random_normal(shape=(num_inputs, num_outputs), ctx=model_ctx)
-b[:] = nd.random_normal(shape=num_outputs, ctx=model_ctx)
+    def sigmoidPrime(self,z):
+    #Derivative of the sigmoid function
+        return self.sigmoid(z)*(1-self.sigmoid(z))
 
-############################################
-#    Script to plot the losses over time
-############################################
-def plot(losses, X, sample_size=100):
-    xs = list(range(len(losses)))
-    f, (fg1, fg2) = plt.subplots(1, 2)
-    fg1.set_title('Loss during training')
-    fg1.plot(xs, losses, '-r')
-    fg2.set_title('Estimated vs real function')
-    fg2.plot(X[:sample_size, 1].asnumpy(),
-             net(X[:sample_size, :]).asnumpy(), 'or', label='Estimated')
-    fg2.plot(X[:sample_size, 1].asnumpy(),
-             real_fn(X[:sample_size, :]).asnumpy(), '*g', label='Real')
-    fg2.legend()
-
-    plt.show()
-
-learning_rate = .0001
-losses = []
-plot(losses, X)
-
-for e in range(epochs):
-    cumulative_loss = 0
-    for i, (data, label) in enumerate(train_data):
-        data = data.as_in_context(model_ctx)
-        label = label.as_in_context(model_ctx).reshape((-1, 1))
-        with autograd.record():
-            output = net(data)
-            loss = square_loss(output, label)
-        loss.backward()
-        SGD(params, learning_rate)
-        cumulative_loss += loss.asscalar()
-
-    print("Epoch %s, batch %s. Mean loss: %s" % (e, i, cumulative_loss/num_batches))
-    losses.append(cumulative_loss/num_batches)
-
-plot(losses, X)
+NN = NeuralNetwork(x,y)
+NN.feed_forward()
+NN.backpropagation()
+        
