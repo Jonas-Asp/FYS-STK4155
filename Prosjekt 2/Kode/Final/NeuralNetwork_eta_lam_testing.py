@@ -30,6 +30,7 @@ Y_test = Y_test.reshape(len(Y_test),1)
 Y_train = Y_train/np.max(Y_train)
 Y_test = Y_test/np.max(Y_test)
 
+print(np.shape(X_test))
 
 """ Different activation functions: Sigmoid, Tanh, Softsign """
 def sigmoid(z):

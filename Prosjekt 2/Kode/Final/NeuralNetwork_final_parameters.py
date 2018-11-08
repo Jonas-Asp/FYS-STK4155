@@ -61,7 +61,7 @@ class NeuralNetwork(object):
             n_inputs     = np.size(X_train,1), 
             n_row_output = np.size(Y_train),
             n_col_output = 1,
-            epochs       = int(1e4),
+            epochs       = int(1e3),
             
         ):
         """ Setting variables """
@@ -198,7 +198,7 @@ class NeuralNetwork(object):
 batch_size = 50
 lmbd = 1       #1e-1
 eta  = 1e-3    #1e-2
-layers = [50, 75, 30, 85]
+layers = [3500, 200, 1000, 1600]
 
 
 
