@@ -15,8 +15,17 @@ def ising_energies(states,L):
 
 
 L=2
+
+
+
+
+
 # create 10000 random Ising states
+<<<<<<< HEAD
 states=np.random.choice([-1, 1], size=(3,L))
+=======
+states=np.random.choice([-1, 1], size=(4,L))
+>>>>>>> 965a75d5f1ab4364e590383c728e45d6fbe40fcf
 print(states,"States 1")
 # calculate Ising energies
 energies=ising_energies(states,L)
@@ -32,3 +41,12 @@ Data=[states,energies]
 
 print(Data[0],"States")
 print(Data[1],"Energy")
+
+n_samples=400
+# define train and test data sets
+X_train=Data[0][:n_samples]
+Y_train=Data[1][:n_samples] #+ np.random.normal(0,4.0,size=X_train.shape[0])
+X_test=Data[0][n_samples:3*n_samples//2]
+Y_test=Data[1][n_samples:3*n_samples//2] #+ np.random.normal(0,4.0,size=X_test.shape[0])
+
+print(X_train[:,:])

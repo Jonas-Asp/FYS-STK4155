@@ -143,8 +143,6 @@ for i in range(len(lam)):
     ridge = regression(Y_train,dMatrix,lam[i],False)
     lasso,lassopred = getLasso(X_train,Y_train,lam[i])
 
-    
-
 
     ################ PLotting
 #    axarr[0].set_title('$\\mathrm{OLS}$',fontsize=16)
