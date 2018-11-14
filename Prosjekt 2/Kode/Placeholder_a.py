@@ -21,15 +21,21 @@ L=2
 
 
 # create 10000 random Ising states
+<<<<<<< HEAD
+states=np.random.choice([-1, 1], size=(3,L))
+=======
 states=np.random.choice([-1, 1], size=(4,L))
+>>>>>>> 965a75d5f1ab4364e590383c728e45d6fbe40fcf
 print(states,"States 1")
 # calculate Ising energies
 energies=ising_energies(states,L)
 
 # reshape Ising states into RL samples: S_iS_j --> X_p
 states=np.einsum('...i,...j->...ij', states, states)
+print(states)
 shape=states.shape
 states=states.reshape((shape[0],shape[1]*shape[2]))
+
 # build final data set
 Data=[states,energies]
 

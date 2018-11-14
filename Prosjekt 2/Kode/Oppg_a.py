@@ -117,6 +117,8 @@ X_train=Data[0][:n_samples]
 Y_train=Data[1][:n_samples] #+ np.random.normal(0,4.0,size=X_train.shape[0])
 X_test=Data[0][n_samples:3*n_samples//2]
 Y_test=Data[1][n_samples:3*n_samples//2] #+ np.random.normal(0,4.0,size=X_test.shape[0])
+print(3*n_samples//2)
+print(np.shape(Data[1]))
 
 # Calculate the design matrix of first degree
 dMatrix = designMatrix(X_train,1)
