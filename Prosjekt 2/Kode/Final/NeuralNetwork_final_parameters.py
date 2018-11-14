@@ -196,16 +196,19 @@ class NeuralNetwork(object):
 
 
 batch_size = 50
-lmbd = 1       #1e-1
-eta  = 1e-3    #1e-2
+lmbd = 1       
+eta  = 1e-3    
 layers = [3500, 200, 1000, 1600]
 
 
 
-NN = NeuralNetwork(X_train,Y_train, X_test, Y_test, layers, batch_size, eta, lmbd) # 3 first
+NN = NeuralNetwork(X_train,Y_train, X_test, Y_test, layers, batch_size, eta, lmbd)
 
 mse_train, mse_test = NN.training(X_train,Y_train)
 
+
+
+""" Plotting """
 minmse_train = np.min(mse_train)
 minmse_test = np.min(mse_test)
 minmse_index = np.argmin(mse_test, axis=None)

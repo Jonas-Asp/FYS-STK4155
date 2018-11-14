@@ -202,7 +202,7 @@ class NeuralNetwork(object):
         return softsignPrime(z)
 
 
-
+""" Parameters """
 batch_size = 50
 lmbd = [1, 1e-1, 1e-2]
 eta  = [1e-3, 1e-2, 1e-1]
