@@ -40,6 +40,7 @@ accuracy = logreg.score(x_test, y_test)
 print("accuracy = ", accuracy * 100, "%")
 
 skplt.metrics.plot_cumulative_gain(y_test, z)
+plt.xlabel("Nada")
 plt.show()
 
 
