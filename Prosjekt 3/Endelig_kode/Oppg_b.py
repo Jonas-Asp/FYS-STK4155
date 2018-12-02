@@ -35,7 +35,7 @@ def cumulative(z,ytest):
     plt.show()
     
     gmb = sum(gain[1][:]*zsum - np.linspace(0,zsum,tmax+1))
-    bmg = sum(besty[:] - gain[1][:]*zsum)
+    bmg = sum(besty[:] - np.linspace(0,zsum,tmax+1))
     print("Area ratio %.10f" %(gmb/bmg))
 
 def bootstrap(xtrain,xtest,ytrain,ytest,nboots):
