@@ -29,11 +29,14 @@ print(corr)
 sns.heatmap(corr, 
         xticklabels=corr.columns,
         yticklabels=corr.columns)
+plt.title("Korrelasjons matrisen til datsettet", fontsize=18,fontweight="bold", y=1.04)
 plt.show()
 
 outcomes = np.arange(2)
 default_sum = np.sum(df.default_payment_next_month)
 no_default = len(df.default_payment_next_month) - default_sum
-plt.bar(outcomes, [default_sum, no_default])
-plt.xticks(np.arange(2), ('Default', 'No default'))
+plt.bar(outcomes, [default_sum, no_default], color=['green', 'orange'])
+plt.xticks(np.arange(2), ('Klarer ikke å betale tilbake', 'Klarer å betale tilbake'),fontsize=12)
+plt.title("Tibakebetalings antall - Oktober 2005", fontsize=18, fontweight="bold", y=1.04)
+plt.ylabel("Antall individer",fontsize=14)
 plt.show()
