@@ -1,22 +1,19 @@
 import pickle
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import accuracy_score, r2_score
-from sklearn.metrics import roc_curve
-import pandas as pd 
 import scikitplot as skplt
-from sklearn.utils import resample
 import warnings
 import seaborn as sns
 from sklearn.neural_network import MLPClassifier
 warnings.filterwarnings("ignore")
 
 
-
+""" Beregner gains kurven via skplt. Med modell kruve, baseline og teoretisk beste """
 def cumulative(z,ytest):
     s = skplt.metrics.plot_cumulative_gain(ytest, z)
+    plt.title("Disregard this. Plot as a consequence of skplt")
     plt.show()
     zsum = sum(z[:,1])
     tmax = 15000
@@ -57,7 +54,7 @@ x = df[:,:23]
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.5)
 
 
-""" Grid 1 """
+""" Grid 1, Check eta and lambda values """
 eta_vals = np.logspace(-5, 1, 7)
 lmbd_vals = np.logspace(-5, 1, 7)
 n_hidden_neurons = [20, 40]
@@ -96,7 +93,7 @@ ax.set_ylabel("$\eta$", fontsize=14)
 ax.set_xlabel("$\lambda$", fontsize=14)
 plt.show()
 
-""" Grid 2"""
+""" Grid 2, Check hidden layers and epochs"""
 eta = 1e-1
 lmbd = 1e-3
 n_hidden_neurons = [57, 23, 14, 94, 62, 40]
@@ -141,9 +138,7 @@ ax.set_xlabel("Hidden layers", fontsize=14)
 plt.show()
 
 
-""" gains kurve """
-# store models for later use
-
+""" Gains curve and prediction """
 eta = 1e-1
 lmbd = 1e-3
 n_hidden_neurons = [57, 23]
@@ -155,9 +150,7 @@ dnn.fit(x_train, y_train)
 test_pred = dnn.predict(x_test)
 test_pred2 = dnn.predict_proba(x_test)
 
-
 accuarcy = accuracy_score(y_test, test_pred)
-
 
 cumulative(test_pred2,y_test)
 print("accuarcy = ", accuarcy * 100, "%")

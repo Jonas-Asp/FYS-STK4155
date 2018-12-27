@@ -21,19 +21,19 @@ for key,val in df.items():
     i += 1
     
 
-
+# save picle object for other scripts
 pickle_out = open("df.pickle","wb")
 pickle.dump(df_matrix, pickle_out)
 pickle_out.close()
 
 print("Done")
 
+
+
 """ Load the python object from the excel datafile """
 pickle_in = open("df.pickle","rb")
 df = pickle.load(pickle_in)
 pickle_in.close()
-
-
 
 
 """ Testing data """
@@ -42,9 +42,11 @@ file = r'data/default_of_credit_card_clients.xls'
 # read datafile
 df = pd.read_excel(file)
 
+# Cheking data file, if any errors
 print(df.head())
-df.info() # output shown below
+df.info()
 
+# Printing correlation matrix and visualizing
 corr = df.corr()
 print(corr)
 sns.heatmap(corr, 
@@ -53,6 +55,7 @@ sns.heatmap(corr,
 plt.title("Korrelasjons matrisen til datsettet", fontsize=18,fontweight="bold", y=1.04)
 plt.show()
 
+# Check what the outcome was oktober 2005, the outcome to be predicted
 outcomes = np.arange(2)
 default_sum = np.sum(df.default_payment_next_month)
 no_default = len(df.default_payment_next_month) - default_sum

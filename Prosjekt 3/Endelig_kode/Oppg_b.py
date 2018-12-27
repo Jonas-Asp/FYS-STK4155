@@ -3,16 +3,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve
 import pandas as pd 
 import scikitplot as skplt
 from sklearn.utils import resample
 import warnings
 warnings.filterwarnings("ignore")
 
+""" Beregner gains kurven via skplt. Med modell kruve, baseline og teoretisk beste """
 def cumulative(z,ytest):
     s = skplt.metrics.plot_cumulative_gain(ytest, z)
+    plt.title("Disregard this. Plot as a consequence of skplt")
     plt.show()
     zsum = sum(z[:,1])
     tmax = 15000
@@ -27,7 +27,7 @@ def cumulative(z,ytest):
     plt.plot(gain[0][:]*tmax,gain[1][:]*zsum, label="Modell kurve")
     plt.plot(baseline[0][:]*tmax,baseline[1][:]*zsum, '--', label="Baseline")
     plt.plot(bestx,besty, label="Teoretisk beste kurve")
-    plt.title("Gains kurven ved logistisk regresjon", fontsize = 16, fontweight="bold", y=1.08)
+    plt.title("Gains kurven ved logistisk regresjon (1) u/bootstrap, (2) m/bootstrap", fontsize = 16, fontweight="bold", y=1.08)
     plt.ylabel("Kumulativ target data",fontsize=14)
     plt.xlabel("Test sett størrelse",fontsize=14)
     plt.legend()
@@ -38,6 +38,7 @@ def cumulative(z,ytest):
     bmg = sum(besty[:] - np.linspace(0,zsum,tmax+1))
     print("Area ratio %.10f" %(gmb/bmg))
 
+""" Bootstrap av logistisk regresjon """
 def bootstrap(xtrain,xtest,ytrain,ytest,nboots):
     default = np.zeros((ytrain.shape[0],nboots))
     nodefualt = np.zeros((ytrain.shape[0],nboots))
@@ -84,6 +85,7 @@ print("accuracy = ", accuracy * 100, "%")
 print("Sannsynlig antall som ikke klarer å betaler, %.10f" %sum(z[:,1]))
 print("Sannsynlig antall som klarer å betaler, %.10f" %sum(z[:,0]))
 
+# Visualize the contribution from the different coefficients
 coeff = list(logreg.coef_[0])
 labels = list(x_train)
 features = pd.DataFrame()
@@ -95,7 +97,7 @@ features.set_index('Features', inplace=True)
 features.importance.plot(kind='barh', figsize=(11, 6),color = features.positive.map({True: 'blue', False: 'red'}))
 plt.xlabel('Viktighet',fontsize=14)
 plt.ylabel('Variabler',fontsize=14)
-plt.title("Bidraget fra koeffisentene - Logistisk regresjon m/bootstrap", fontsize = 16, fontweight="bold", y=1.02)
+plt.title("Bidraget fra koeffisentene - Logistisk regresjon", fontsize = 16, fontweight="bold", y=1.02)
 plt.show()
 
 
@@ -104,11 +106,13 @@ plt.show()
 nboots = 50
 z2,ac = bootstrap(x_train,x_test,y_train,y_test,nboots)
 cumulative(z2,y_test)
+
+# Accuracy score
 print("accuracy = ", ac * 100, "%")
 print("Sannsynlig antall som ikke klarer å betaler, %.10f" %sum(z2[:,1]))
 print("Sannsynlig antall som klarer å betaler, %.10f" %sum(z2[:,0]))
 
-
+# Visualize the contribution from the different coefficients
 coeff = list(logreg.coef_[0])
 labels = list(x_train)
 features = pd.DataFrame()
